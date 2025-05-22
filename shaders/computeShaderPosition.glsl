@@ -16,9 +16,7 @@ void main() {
     // Skip if outside texture bounds
     if (pixel_coords.x >= width || pixel_coords.y >= height) {
         return;
-    }
-
-    // Read current position and velocity
+    }    // Read current position and velocity
     vec4 tmpPos = imageLoad(texturePosition, pixel_coords);
     vec3 pos = tmpPos.xyz;
     float isDarkMatter = tmpPos.w;
@@ -26,11 +24,11 @@ void main() {
     vec4 tmpVel = imageLoad(textureVelocity, pixel_coords);
     vec3 vel = tmpVel.xyz;
 
-    // Update position using velocity
-    if (pos.x != 0.0 || pos.y != 0.0 || pos.z != 0.0) {
+    // Update position using velocity (skip central black hole)
+    if (isDarkMatter < 0.5 && (pos.x != 0.0 || pos.y != 0.0 || pos.z != 0.0)) {
         pos += vel * deltaTime;
     }
 
-    // Store updated position
+    // Store updated position, preserving dark matter flag
     imageStore(texturePosition, pixel_coords, vec4(pos, isDarkMatter));
 }

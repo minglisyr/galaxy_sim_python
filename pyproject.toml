@@ -9,5 +9,4 @@ dependencies = [
     "moderngl>=5.7.0",
     "glfw>=2.5.5",
     "pyrr>=0.10.3",
-    "pillow>=10.4.0",
 ]
