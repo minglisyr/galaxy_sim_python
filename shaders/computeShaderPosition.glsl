@@ -1,34 +1,32 @@
 #version 430
 
-layout(local_size_x=16, local_size_y=16) in;
+// Define the time step for the simulation
+#define delta (1.0 / 30.0)
 
-layout(rgba32f, binding=0) uniform image2D texturePosition;
-layout(rgba32f, binding=1) uniform image2D textureVelocity;
+layout(binding = 0) uniform sampler2D texturePosition;
+layout(binding = 1) uniform sampler2D textureVelocity;
+layout(rgba32f, binding = 2) uniform image2D outputImage;
 
-uniform float deltaTime;
+uniform vec2 resolution;
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 void main() {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-      // Get texture dimensions
-    int width = imageSize(texturePosition).x;
-    int height = imageSize(texturePosition).y;
-    
-    // Skip if outside texture bounds
-    if (pixel_coords.x >= width || pixel_coords.y >= height) {
-        return;
-    }    // Read current position and velocity
-    vec4 tmpPos = imageLoad(texturePosition, pixel_coords);
-    vec3 pos = tmpPos.xyz;
-    float isDarkMatter = tmpPos.w;
+    // Calculate the position in the output image
+    ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / resolution;
 
-    vec4 tmpVel = imageLoad(textureVelocity, pixel_coords);
+    vec4 tmpPos = texture(texturePosition, uv);
+    vec3 pos = tmpPos.xyz;
+
+    vec4 tmpVel = texture(textureVelocity, uv);
     vec3 vel = tmpVel.xyz;
 
-    // Update position using velocity (skip central black hole)
-    if (isDarkMatter < 0.5 && (pos.x != 0.0 || pos.y != 0.0 || pos.z != 0.0)) {
-        pos += vel * deltaTime;
+    // Dynamics
+    if (pos.x != 0.0 && pos.y != 0.0 && pos.z != 0.0) {
+        pos += vel * delta;
     }
 
-    // Store updated position, preserving dark matter flag
-    imageStore(texturePosition, pixel_coords, vec4(pos, isDarkMatter));
+    // Output the positions and isDarkMatter in the output image
+    imageStore(outputImage, storePos, vec4(pos, tmpPos.w));
 }

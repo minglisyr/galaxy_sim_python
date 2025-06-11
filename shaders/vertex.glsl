@@ -1,27 +1,66 @@
 #version 430
 
-layout (location = 0) in vec4 position;  // w component is dark matter flag
-layout (location = 1) in vec4 color;     // w component is brightness
+// Declare uniforms for texture samplers 
+layout(binding=0) uniform sampler2D texturePosition;
+layout(binding=1) uniform sampler2D textureVelocity;
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform float pointSize;
-uniform float brightness;
+// Declare uniforms for camera parameters and particle count
+uniform float cameraConstant;
+uniform float particlesCount;
+uniform float uMaxAccelerationColor;
+uniform float uLuminosity;
+uniform float uHideDarkMatter;
 
+// Declare output variable for color
 out vec4 vColor;
 
+// Normalize an acceleration value to a range of 0 to 1
+float normalized(float acc){
+    return (acc-0.)/(uMaxAccelerationColor-0.);
+}
+
+// If you use uv, it must be defined as an input or calculated
+// If you don't have it in your original, you likely have to pass it as an attribute/in variable
+// Assuming you have a vec2 uv input:
+in vec2 uv;
+
 void main() {
-    gl_Position = projection * view * vec4(position.xyz, 1.0);
-    
-    // Adjust point size based on distance from camera
-    float dist = length(gl_Position.xyz);
-    gl_PointSize = pointSize * (position.w > 0.5 ? 3.0 : 1.0) / dist;
-    
-    // Adjust color brightness and handle dark matter
-    vColor = color;
-    if (position.w > 0.5) {
-        // Black hole/dark matter
-        vColor = vec4(1.0, 0.2, 0.0, 1.0);  // Orange-red for black hole
+    // Retrieve position data from texture
+    vec4 posTemp = texture(texturePosition, uv);
+    vec3 pos = posTemp.xyz;
+    float hideDarkMatter = posTemp.w;
+
+    // Retrieve velocity data from texture and calculate acceleration
+    vec4 velTemp = texture(textureVelocity, uv);
+    vec3 vel = velTemp.xyz;
+    float acc = velTemp.w;
+
+    // In desktop GLSL, modelViewMatrix and projectionMatrix are not built-in; you must pass them as uniforms
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+    vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
+
+    /*** Size ***/
+    gl_PointSize = 1.0;
+    gl_PointSize *= ( 1.0 / - mvPosition.z );
+
+    // Calculate the final position of the particle using the projection matrix
+    gl_Position = projectionMatrix * mvPosition;
+
+    /*** Color ***/
+    vec3 hightAccelerationColor = vec3(1.,0.376,0.188);
+    vec3 lowAccelerationColor = vec3(0.012,0.063,0.988);
+    vec3 finalColor = vec3(0.0,0.0,0.0);
+    if(uHideDarkMatter == 1.0) {
+        if(hideDarkMatter == 0.0){
+            finalColor = mix(lowAccelerationColor, hightAccelerationColor, normalized(acc));
+        } else {
+            finalColor = vec3(0.0,0.0,0.0);
+        }
+    } else {
+        finalColor = mix(lowAccelerationColor, hightAccelerationColor, normalized(acc));
     }
-    vColor.rgb *= brightness;  // Apply brightness adjustment
+
+    // Set the color of the particle
+    vColor = vec4(finalColor, uLuminosity);
 }
