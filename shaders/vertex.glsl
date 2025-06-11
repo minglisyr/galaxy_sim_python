@@ -11,6 +11,10 @@ uniform float uMaxAccelerationColor;
 uniform float uLuminosity;
 uniform float uHideDarkMatter;
 
+// Declare uniforms for model-view and projection matrices
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
 // Declare output variable for color
 out vec4 vColor;
 
@@ -35,9 +39,6 @@ void main() {
     vec3 vel = velTemp.xyz;
     float acc = velTemp.w;
 
-    // In desktop GLSL, modelViewMatrix and projectionMatrix are not built-in; you must pass them as uniforms
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
     vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
 
     /*** Size ***/

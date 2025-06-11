@@ -134,7 +134,7 @@ class GalaxySimulation:
         self.velocity_texture.bind_to_image(1, read=True, write=True)
         
         # Update uniforms if they change
-        self.velocity_program['deltaTime'] = self.time_step
+        self.velocity_program['timeStep'] = self.time_step
         self.velocity_program['gravity'] = self.gravity
         self.velocity_program['interactionRate'] = self.interaction_rate
         self.velocity_program['blackHoleForce'] = self.black_hole_force
@@ -286,7 +286,7 @@ class GalaxyVisualization:
             print("\nShader compilation successful!")
 
             # Set up uniforms with correct names (matching shader)
-            self.render_program['projection'].write(self.proj.astype('f4').tobytes())
+            self.render_program['projectionMatrix'].write(self.proj.astype('f4').tobytes())
             self.render_program['pointSize'].value = 1.0  
             self.render_program['brightness'].value = 1.0  
             
